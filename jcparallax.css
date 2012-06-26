@@ -2,6 +2,9 @@
 	position: relative;
 	overflow: hidden;
 }
+.jcp-viewport.scroll {
+	overflow: auto;
+}
 .jcp-layer {
 	position: absolute;
 	/* :NOTE: you will need to override these timings if changing the default frame duration in jc-parallax.js */

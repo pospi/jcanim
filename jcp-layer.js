@@ -17,9 +17,7 @@ jcparallax.Layer = function(viewport, el, options)
 	// setup instance options
 	this.viewport = viewport;
 	this.element = el;
-	this.options = options;
-
-	jcparallax.Viewport._calcMovementRanges(this.options);
+	this.options = jcparallax.Viewport._inferMovementRanges(options);
 
 	// store animation event handler to be called by our Viewport
 	if ($.isFunction(this.options.animHandler)) {
@@ -84,6 +82,7 @@ $.extend(jcparallax.Layer.prototype, {
 		} else {
 			yRange = this._calculateMovementRange(yRangeOrCb);
 		}
+
 		this.minX = xRange[0];
 		this.rangeX = xRange[1] - xRange[0];
 		this.minY = yRange[0];
@@ -136,7 +135,9 @@ jcparallax.Layer.animHandlers = {
 
 	background : function(xVal, yVal)
 	{
-
+		return {
+			'background-position' : (this.minX + (xVal * this.rangeX)) + 'px ' + (this.minY + (yVal * this.rangeY)) + 'px',
+		};
 	},
 
 	stretch : function(xVal, yVal)
@@ -163,24 +164,22 @@ jcparallax.Layer.rangeCalculators = {
 
 	width : function(el, vp)
 	{
-		var wDelta = vp.sizeX - el.width();
-		return [0, wDelta];
+		return [0, vp.sizeX - el.width()];
 	},
 
 	height : function(el, vp)
 	{
-		var hDelta = vp.sizeY - el.height();
-		return [hDelta, 0];
+		return [vp.sizeY - el.height(), 0];
 	},
 
 	scrollWidth : function(el, vp)
 	{
-		return [0, el.attr('scrollWidth')];
+		return [-(el.get(0).scrollWidth - vp.sizeX), 0];
 	},
 
 	scrollHeight : function(el, vp)
 	{
-		return [0, el.attr('scrollHeight')];
+		return [0, el.get(0).scrollHeight - vp.sizeY];
 	},
 
 	fontSize : function(el, vp)
@@ -190,7 +189,7 @@ jcparallax.Layer.rangeCalculators = {
 
 	lineHeight : function(el, vp)
 	{
-		return [0, el.css('line-height')];
+		return [el.css('line-height'), 0];
 	},
 
 	opacity : function(el, vp)

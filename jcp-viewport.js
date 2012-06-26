@@ -38,7 +38,7 @@ jcparallax.Viewport = function(el, options, layerOptions)
 	};
 
 	// determine layer movement ranges if set to automatic
-	this.options = jcparallax.Viewport._calcMovementRanges($.extend(true, defaults, options));
+	this.options = jcparallax.Viewport._inferMovementRanges($.extend(true, defaults, options));
 
 	// set layer opts for passing on to child layers
 	this.layerOptions = layerOptions;
@@ -81,7 +81,7 @@ $.extend(jcparallax.Viewport, {
 	 * @param  {object} options incoming options object
 	 * @return the processed options
 	 */
-	_calcMovementRanges : function(options)
+	_inferMovementRanges : function(options)
 	{
 		// set default range calculation callbacks
 		if (options.movementRangeX === true || options.movementRangeY === true && !$.isFunction(options.animHandler)) {
@@ -93,23 +93,23 @@ $.extend(jcparallax.Viewport, {
 				case 'background':
 				case 'stretch':
 					switch (options.inputHandler) {
-						case 'mousemove':
-							options.movementRangeX = 'width';
-							options.movementRangeY = 'height';
-							break;
 						case 'scroll':
-							options.movementRangeX = 'scrollWidth';
-							options.movementRangeY = 'scrollHeight';
+							options.movementRangeX = jcparallax.Layer.rangeCalculators.scrollWidth;
+							options.movementRangeY = jcparallax.Layer.rangeCalculators.scrollHeight;
+							break;
+						default:
+							options.movementRangeX = jcparallax.Layer.rangeCalculators.width;
+							options.movementRangeY = jcparallax.Layer.rangeCalculators.height;
 							break;
 					}
 					break;
 				case 'textShadow':
-					options.movementRangeX = 'fontSize';
-					options.movementRangeY = 'lineHeight';
+					options.movementRangeX = jcparallax.Layer.rangeCalculators.fontSize;
+					options.movementRangeY = jcparallax.Layer.rangeCalculators.lineHeight;
 					break;
 				case 'opacity':
-					options.movementRangeX = 0;
-					options.movementRangeY = 'opacity';
+					options.movementRangeX = [0, 0];
+					options.movementRangeY = jcparallax.Layer.rangeCalculators.opacity;
 					break;
 			}
 		}
@@ -146,7 +146,6 @@ $.extend(jcparallax.Viewport.prototype, {
 	bindEvent : function(eventName, handler)
 	{
 		var that = this;
-
 		eventName += jcparallax.eventNamespace;
 
 		// detach old callback first if present
@@ -246,8 +245,8 @@ $.extend(jcparallax.Viewport.prototype, {
 		this.offsetY = offset.top;
 		this.sizeX = this.element.width();
 		this.sizeY = this.element.height();
-		this.scrollX = this.element.attr('scrollWidth');
-		this.scrollY = this.element.attr('scrollHeight');
+		this.scrollX = this.element[0].scrollWidth - this.sizeX;
+		this.scrollY = this.element[0].scrollHeight - this.sizeY;
 
 		if (this.layers) {
 			$.each(this.layers, function(i, layer) {
@@ -294,7 +293,8 @@ jcparallax.Viewport.inputHandlers = {
 		var xPos = el.scrollLeft(),
 			yPos = el.scrollTop();
 
-		this.updateLastSamplePos(xPos / this.scrollX, yPos / this.scrollY);
+		// :NOTE: scroll offsets are often calculated smaller than the available space due to scrollbar space
+		this.updateLastSamplePos(this.scrollX ? Math.min(1, xPos / this.scrollX) : 0, this.scrollY ? Math.min(1, yPos / this.scrollY) : 0);
 	},
 
 	click : function(el, evt)
