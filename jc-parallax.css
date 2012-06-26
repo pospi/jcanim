@@ -1,0 +1,12 @@
+.jcp-viewport {
+	position: relative;
+	overflow: hidden;
+}
+.jcp-layer {
+	position: absolute;
+	/* :NOTE: you will need to override these timings if changing the default frame duration in jc-parallax.js */
+	transition: all .12s linear;
+	-moz-transition: all .12s linear;
+	-o-transition: all .12s linear;
+	-webkit-transition: all .12s linear;
+}
