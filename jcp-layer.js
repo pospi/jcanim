@@ -19,9 +19,7 @@ jcparallax.Layer = function(viewport, el, options)
 	this.element = el;
 	this.options = options;
 
-	jcparallax.Viewport._handleOptions(this.options);
-
-	this.setFramerate(jcparallax.Viewport._checkFramerate(this.options, this.options.framerateCheckCb));
+	jcparallax.Viewport._calcMovementRanges(this.options);
 
 	// store animation event handler to be called by our Viewport
 	if ($.isFunction(this.options.animHandler)) {
@@ -40,11 +38,8 @@ $.extend(jcparallax.Layer.prototype, {
 	minMaxX : null,
 	minMaxY : null,
 
-	setFramerate : function(ms)
-	{
-		this.framerate = ms;
-		this._addCss(ms);
-	},
+	// previous CSS attributes of the layer
+	prevFrameCss : {},
 
 	/**
 	 * Refreshes the cached coordinates of the layer after some external DOM manipulation
@@ -54,6 +49,23 @@ $.extend(jcparallax.Layer.prototype, {
 		if (!$.isArray(this.options.movementRangeX) || !$.isArray(this.options.movementRangeY)) {
 			this._updateMovementRange(this.options.movementRangeX, this.options.movementRangeY);
 		}
+	},
+
+	/**
+	 * Redraw the layer, given new input values
+	 * @return true if the layer needed re-rendering
+	 */
+	redraw : function(xVal, yVal)
+	{
+		var newCss = this.animHandler.call(this, xVal, yVal);
+
+		if (this._cssChanged(newCss)) {
+			this.prevFrameCss = newCss;
+			this.element.css(newCss);
+			return true;
+		}
+
+		return false;
 	},
 
 	_updateMovementRange : function(xRange, yRange)
@@ -71,15 +83,14 @@ $.extend(jcparallax.Layer.prototype, {
 		return rangeCallback.call(this, this.element, this.viewport);
 	},
 
-	_addCss : function(framerate)
+	_cssChanged : function(newCss)
 	{
-		var that = this;
-		framerate = (framerate / 1000) + 's';
-
-		$.each(jcparallax.cssDomPrefixes, function(i, prefix) {
-			that.element.css(prefix + 'transition-duration', framerate);
-		});
-		that.element.css('transition-duration', framerate);
+		for (var i in newCss) {
+			if (this.prevFrameCss[i] === undefined || this.prevFrameCss[i] != newCss[i]) {
+				return true;
+			}
+		}
+		return false;
 	}
 });
 
@@ -89,40 +100,40 @@ $.extend(jcparallax.Layer.prototype, {
 
 jcparallax.Layer.animHandlers = {
 
-	position : function(el, xVal, yVal)
+	position : function(xVal, yVal)
 	{
-		el.css({
+		return {
 			left : this.minMaxX[0] + (xVal * (this.minMaxX[1] - this.minMaxX[0])),
 			top : this.minMaxY[0] + (yVal * (this.minMaxY[1] - this.minMaxY[0])),
-		});
+		};
 	},
 
-	padding : function(el, xVal, yVal)
+	padding : function(xVal, yVal)
 	{
 
 	},
 
-	margins : function(el, xVal, yVal)
+	margins : function(xVal, yVal)
 	{
 
 	},
 
-	background : function(el, xVal, yVal)
+	background : function(xVal, yVal)
 	{
 
 	},
 
-	stretch : function(el, xVal, yVal)
+	stretch : function(xVal, yVal)
 	{
 
 	},
 
-	textShadow : function(el, xVal, yVal)
+	textShadow : function(xVal, yVal)
 	{
 
 	},
 
-	opacity : function(el, xVal, yVal)
+	opacity : function(xVal, yVal)
 	{
 
 	}

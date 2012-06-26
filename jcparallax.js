@@ -140,6 +140,9 @@ $.extend(jcparallax, {
 
 	viewportStorageKey : 'jcparallax-viewport',
 	layerStorageKey :	 'jcparallax-layer',
+
+	eventNamespace : 	 '.jcparallax',
+
 	jsDomPrefixes :		 'Moz O Webkit ms'.split(' '),
 	cssDomPrefixes :	 '-moz- -o- -webkit- -ms-'.split(' '),
 
@@ -150,11 +153,19 @@ $.extend(jcparallax, {
 			bgOk = true,	// background-position transition supported (not in opera as of 22/6/12 @see http://www.quirksmode.org/css/transitions.html)
 			tsOk = true,	// text-shadow transition supported (not in opera)
 
+			eventNames = {	// mapping of js DOM prefixes to the transition event needed by TransitionInterval to signify the end of a transition
+				MozTransition:    'transitionend',
+				OTransition:      'oTransitionEnd',
+				WebkitTransition: 'webkitTransitionEnd',
+				msTransition:     'MSTransitionEnd'
+			},
+
 			returnSupport = function(ok, bgOk, tsOk) {
 				return {
-					transitions : ok || false,
+					transitions : !!ok,
 					backgroundTransitions : bgOk || false,
-					textShadowTransitions : tsOk || false
+					textShadowTransitions : tsOk || false,
+					transitionEndEvent : ok ? eventNames[ok] + jcparallax.eventNamespace : null
 				};
 			};
 
@@ -168,7 +179,7 @@ $.extend(jcparallax, {
 
 			for (var i in props) {
 				if (styleObj[ props[i] ] !== undefined) {
-					ok = true;
+					ok = props[i];
 					break;
 				}
 			}

@@ -37,11 +37,19 @@ jcparallax.Viewport = function(el, options, layerOptions)
 		framerateCheckCb : null
 	};
 
-	// extend defaults & assign interpreted options
-	this.options = jcparallax.Viewport._handleOptions($.extend(true, defaults, options));
+	// determine layer movement ranges if set to automatic
+	this.options = jcparallax.Viewport._calcMovementRanges($.extend(true, defaults, options));
 
-	// set instance opts
+	// set layer opts for passing on to child layers
 	this.layerOptions = layerOptions;
+
+	// create the timer handler for updating the effect (:TODO: disable when inactive, reuse synced timers)
+	var that = this;
+	this.timer = new jcparallax.TransitionInterval(function() {
+		return that.updateLayers.call(that);
+	}, this.options.framerate, this.options.fbFramerate, function() {
+		that._checkFramerate.call(that);
+	});
 
 	// find layers
 	var layers;
@@ -50,12 +58,10 @@ jcparallax.Viewport = function(el, options, layerOptions)
 	} else {
 		layers = $(options.layerSelector, el);
 	}
+	this.timer.addElements(layers);	// add layer elements for control by the timer
 
 	// initialise layers
 	this.addLayers(layers);
-
-	// check sampling rate based on support for the animation type specified
-	this.setFramerate(jcparallax.Viewport._checkFramerate(this.options, this.options.framerateCheckCb));
 
 	// bind input event & store our event handler callback
 	if ($.isFunction(this.options.inputHandler)) {
@@ -63,6 +69,9 @@ jcparallax.Viewport = function(el, options, layerOptions)
 	} else {
 		this.bindEvent(this.options.inputHandler, jcparallax.Viewport.inputHandlers[this.options.inputHandler]);
 	}
+
+	// start our animation timer
+	this.timer.start();
 };
 
 $.extend(jcparallax.Viewport, {
@@ -73,7 +82,7 @@ $.extend(jcparallax.Viewport, {
 	 * @param  {object} options incoming options object
 	 * @return the processed options
 	 */
-	_handleOptions : function(options)
+	_calcMovementRanges : function(options)
 	{
 		// set default range calculation callbacks
 		if (options.movementRangeX === true || options.movementRangeY === true && !$.isFunction(options.animHandler)) {
@@ -107,29 +116,6 @@ $.extend(jcparallax.Viewport, {
 		}
 
 		return options;
-	},
-
-	/**
-	 * Checks input jcparallax options and returns the appropriate framerate for
-	 * animation depending on available browser support.
-	 *
-	 * Used internally by Viewport and Layer classes to determine animation speed.
-	 *
-	 * @param  {object}   opts             input options map to jcparallax.Viewport or jcparallax.Layer
-	 * @param  {function} framerateCheckCb (optional) callback for additional custom checking of the input options, to enable future expansion.
-	 *                                     This callback should return TRUE if CSS transitions can be used for the animHandler given in the options.
-	 * @return {int} the sampling interval to animate this transition at, in ms
-	 */
-	_checkFramerate : function(opts, framerateCheckCb)
-	{
-		if (!jcparallax.support.transitions
-		 || (!jcparallax.support.backgroundTransitions && opts.animHandler == 'background')
-		 || (!jcparallax.support.textShadowTransitions && opts.animHandler == 'textShadow')
-		 || (framerateCheckCb && !framerateCheckCb(opts))) {
-			return opts.fbFramerate;
-		}
-
-		return opts.framerate;
 	}
 });
 
@@ -146,10 +132,11 @@ $.extend(jcparallax.Viewport.prototype, {
 	// last input sampling coordinates
 	lastSampledX : 0,
 	lastSampledY : 0,
+	lastProcessedX : 0,
+	lastProcessedY : 0,
 
 	boundEvent : null,	// name of the raw DOM event bound to
 	inputCb : null,		// actual bound event listener function
-	framerate : 120,	// :TODO: find good default
 
 	/**
 	 * Binds the DOM event responsible for handling our updates
@@ -161,7 +148,7 @@ $.extend(jcparallax.Viewport.prototype, {
 	{
 		var that = this;
 
-		eventName += '.jcparallax';
+		eventName += jcparallax.eventNamespace;
 
 		// detach old callback first if present
 		if (this.inputCb && this.boundEvent) {
@@ -205,27 +192,12 @@ $.extend(jcparallax.Viewport.prototype, {
 		});
 	},
 
-	setFramerate : function(ms)
-	{
-		// set it
-		this.framerate = ms;
-
-		// update the layer framerates (sets transition-duration properties as required)
-		$.each(this.layers, function(i, layer) {
-			layer.setFramerate(ms);
-		});
-
-		// start the timer for updating the effect (:TODO: disable when inactive, reuse synced timers)
-		var that = this;
-		this.timer = new jcparallax.TransitionInterval(function() {
-			that.updateLayers.call(that);
-		}, this.framerate);
-	},
-
 	/**
 	 * Update the positions of all layers in response to an input event
 	 * @param  {float} xVal input X value, in the range of 0 < x < 1. If ommitted the last sampled X value is used.
 	 * @param  {float} yVal input Y value, in the range of 0 < y < 1. If ommitted the last sampled Y value is used.
+	 *
+	 * @return true if the input event coordinates were different to last time - required for CSS transition timing to function
 	 */
 	updateLayers : function(xVal, yVal)
 	{
@@ -235,10 +207,20 @@ $.extend(jcparallax.Viewport.prototype, {
 			yVal = this.lastSampledY;
 		}
 
+		if (xVal == this.lastProcessedX && yVal == this.lastProcessedY) {
+			return false;	// no change in input
+		}
+		this.lastProcessedX = xVal;
+		this.lastProcessedY = yVal;
+
 		// redraw the layer elements
+		var changed = false;
 		$.each(this.layers, function(i, layer) {
-			layer.animHandler.call(layer, layer.element, xVal, yVal);
+			if (layer.redraw.call(layer, xVal, yVal)) {
+				changed = true;
+			}
 		});
+		return changed;		// return to indicate whether layers needed updating
 	},
 
 	/**
@@ -271,6 +253,24 @@ $.extend(jcparallax.Viewport.prototype, {
 				layer.refreshCoords();
 			});
 		}
+	},
+
+	/**
+	 * Checks input jcparallax options and returns the appropriate framerate for
+	 * animation depending on available browser support.
+	 *
+	 * Used internally by Viewport and Layer classes to determine animation speed.
+	 *
+	 * @param  {object}   opts             input options map to jcparallax.Viewport or jcparallax.Layer
+	 * @param  {function} framerateCheckCb (optional) callback for additional custom checking of the input options, to enable future expansion.
+	 *                                     This callback should return TRUE if CSS transitions can be used for the animHandler given in the options.
+	 * @return {int} the sampling interval to animate this transition at, in ms
+	 */
+	_checkFramerate : function()
+	{
+		return ((!jcparallax.support.backgroundTransitions && this.options.animHandler == 'background')
+		 || (!jcparallax.support.textShadowTransitions && this.options.animHandler == 'textShadow')
+		 || (this.options.framerateCheckCb && !this.options.framerateCheckCb.call(this, this.options)));
 	}
 });
 
