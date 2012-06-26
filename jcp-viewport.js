@@ -58,7 +58,6 @@ jcparallax.Viewport = function(el, options, layerOptions)
 	} else {
 		layers = $(options.layerSelector, el);
 	}
-	this.timer.addElements(layers);	// add layer elements for control by the timer
 
 	// initialise layers
 	this.addLayers(layers);
@@ -190,6 +189,8 @@ $.extend(jcparallax.Viewport.prototype, {
 
 			that.layers.push(handler);
 		});
+
+		this.timer.addElements(layerEls);	// add layer elements for control by the timer
 	},
 
 	/**
