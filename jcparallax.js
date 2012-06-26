@@ -21,7 +21,7 @@
  * 		var p = $('#parallax-viewport').data('jcparallax');
  *
  * Or to call methods directly:
- * 		$('#parallax-viewport').jcparallax(
+ * 		$('#parallax-viewport').jcparallax('updateLayers', 0.5, 0.5);	// set all layers to their center positions
  *
  * Options
  * =======
