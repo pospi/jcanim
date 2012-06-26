@@ -35,8 +35,10 @@ jcparallax.Layer = function(viewport, el, options)
 $.extend(jcparallax.Layer.prototype, {
 
 	// cached layer coordinates for speeding up animation
-	minMaxX : null,
-	minMaxY : null,
+	minX : null,
+	minY : null,
+	rangeX : null,
+	rangeY : null,
 
 	// previous CSS attributes of the layer
 	prevFrameCss : {},
@@ -68,10 +70,24 @@ $.extend(jcparallax.Layer.prototype, {
 		return false;
 	},
 
-	_updateMovementRange : function(xRange, yRange)
+	_updateMovementRange : function(xRangeOrCb, yRangeOrCb)
 	{
-		this.minMaxX = $.isArray(xRange) ? xRange : this._calculateMovementRange(xRange);
-		this.minMaxY = $.isArray(yRange) ? yRange : this._calculateMovementRange(yRange);
+		var xRange, yRange;
+
+		if ($.isArray(xRangeOrCb)) {
+			xRange = xRangeOrCb;
+		} else {
+			xRange = this._calculateMovementRange(xRangeOrCb);
+		}
+		if ($.isArray(yRangeOrCb)) {
+			yRange = yRangeOrCb;
+		} else {
+			yRange = this._calculateMovementRange(yRangeOrCb);
+		}
+		this.minX = xRange[0];
+		this.rangeX = xRange[1] - xRange[0];
+		this.minY = yRange[0];
+		this.rangeY = yRange[1] - yRange[0];
 	},
 
 	_calculateMovementRange : function(rangeCallback)
@@ -103,8 +119,8 @@ jcparallax.Layer.animHandlers = {
 	position : function(xVal, yVal)
 	{
 		return {
-			left : this.minMaxX[0] + (xVal * (this.minMaxX[1] - this.minMaxX[0])),
-			top : this.minMaxY[0] + (yVal * (this.minMaxY[1] - this.minMaxY[0])),
+			left : this.minX + (xVal * this.rangeX),
+			top : this.minY + (yVal * this.rangeY),
 		};
 	},
 

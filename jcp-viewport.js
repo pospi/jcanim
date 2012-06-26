@@ -34,7 +34,7 @@ jcparallax.Viewport = function(el, options, layerOptions)
 		animHandler:	'position',
 		framerate:		120,		// sampling rate (in ms) when using CSS transitions to tween between samples
 		fbFramerate:	null,		// sampling rate for fallback plain-js mode. Calculated from framerate if not provided.
-		framerateCheckCb : null
+		transitionCheckCb : null
 	};
 
 	// determine layer movement ranges if set to automatic
@@ -263,7 +263,7 @@ $.extend(jcparallax.Viewport.prototype, {
 	 * Used internally by Viewport and Layer classes to determine animation speed.
 	 *
 	 * @param  {object}   opts             input options map to jcparallax.Viewport or jcparallax.Layer
-	 * @param  {function} framerateCheckCb (optional) callback for additional custom checking of the input options, to enable future expansion.
+	 * @param  {function} transitionCheckCb (optional) callback for additional custom checking of the input options, to enable future expansion.
 	 *                                     This callback should return TRUE if CSS transitions can be used for the animHandler given in the options.
 	 * @return {int} the sampling interval to animate this transition at, in ms
 	 */
@@ -271,7 +271,7 @@ $.extend(jcparallax.Viewport.prototype, {
 	{
 		return ((!jcparallax.support.backgroundTransitions && this.options.animHandler == 'background')
 		 || (!jcparallax.support.textShadowTransitions && this.options.animHandler == 'textShadow')
-		 || (this.options.framerateCheckCb && !this.options.framerateCheckCb.call(this, this.options)));
+		 || (this.options.transitionCheckCb && !this.options.transitionCheckCb.call(this, this.options)));
 	}
 });
 
