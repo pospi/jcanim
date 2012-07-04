@@ -114,6 +114,13 @@ $.extend(jcparallax.Viewport, {
 			}
 		}
 
+		if (typeof options.movementRangeX == 'string') {
+			options.movementRangeX = jcparallax.Layer.rangeCalculators[options.movementRangeX];
+		}
+		if (typeof options.movementRangeY == 'string') {
+			options.movementRangeY = jcparallax.Layer.rangeCalculators[options.movementRangeY];
+		}
+
 		return options;
 	}
 });
@@ -147,6 +154,11 @@ $.extend(jcparallax.Viewport.prototype, {
 	{
 		var that = this;
 		eventName += jcparallax.eventNamespace;
+
+		// infer handler from predefined set if a string
+		if (typeof handler == 'string') {
+			handler = jcparallax.Viewport.inputHandlers[handler];
+		}
 
 		// detach old callback first if present
 		if (this.inputCb && this.boundEvent) {
