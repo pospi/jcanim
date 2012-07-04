@@ -316,6 +316,20 @@ jcparallax.Viewport.inputHandlers = {
 
 		// :TODO: start a timer to animate the parallax over the specified duration
 		this.updateLastSamplePos(xPos / this.sizeX, yPos / this.sizeY);
+	},
+
+	// the following advanced events would need to have inputEvent provided in options as well
+
+	mousemove_xcentered : function(el, evt)
+	{
+		var xPos = evt.pageX - this.offsetX,
+			yPos = evt.pageY - this.offsetY,
+			halfX = this.sizeX / 2;
+		if (xPos > halfX) {
+			xPos -= halfX;
+			xPos = halfX - xPos;
+		}
+		this.updateLastSamplePos((xPos / this.sizeX) * 2, yPos / this.sizeY);
 	}
 };
 
