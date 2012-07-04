@@ -195,6 +195,16 @@ jcparallax.Layer.rangeCalculators = {
 	opacity : function(el, vp)
 	{
 		return [0, el.css('opacity') || 1];
+	},
+
+	dataRangeX : function(el, vp) 	// reads data attribute 'jcp-xrange'
+	{
+		return el.data('jcp-xrange').split(',');
+	},
+
+	dataRangeY : function(el, vp)  	// reads data attribute 'jcp-yrange'
+	{
+		return el.data('jcp-yrange').split(',');
 	}
 };
 
