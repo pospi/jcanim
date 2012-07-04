@@ -63,10 +63,10 @@ jcparallax.Viewport = function(el, options, layerOptions)
 	this.addLayers(layers);
 
 	// bind input event & store our event handler callback
-	if ($.isFunction(this.options.inputHandler)) {
+	if (this.options.inputEvent || $.isFunction(this.options.inputHandler)) {
 		this.bindEvent(this.options.inputEvent, this.options.inputHandler);
 	} else {
-		this.bindEvent(this.options.inputHandler, jcparallax.Viewport.inputHandlers[this.options.inputHandler]);
+		this.bindEvent(this.options.inputHandler, this.options.inputHandler);
 	}
 
 	// start our animation timer
