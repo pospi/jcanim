@@ -83,10 +83,10 @@ $.extend(jcparallax.Layer.prototype, {
 			yRange = this._calculateMovementRange(yRangeOrCb);
 		}
 
-		this.minX = xRange[0];
-		this.rangeX = xRange[1] - xRange[0];
-		this.minY = yRange[0];
-		this.rangeY = yRange[1] - yRange[0];
+		this.minX = parseFloat(xRange[0]);
+		this.rangeX = parseFloat(xRange[1] - xRange[0]);
+		this.minY = parseFloat(yRange[0]);
+		this.rangeY = parseFloat(yRange[1] - yRange[0]);
 	},
 
 	_calculateMovementRange : function(rangeCallback)
