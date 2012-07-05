@@ -81,7 +81,9 @@ $.extend(jcparallax.Layer.prototype, {
 		this.animators = [];
 
 		// coerce everything to equal length arrays
-		var maxLen = Math.max(animHandlers.length, inputHandlers.length, movementRangeXs.length, movementRangeYs.length, inputEvents.length),
+		var maxLen = Math.max($.isArray(animHandlers) ? animHandlers.length : 0, $.isArray(inputHandlers) ? inputHandlers.length : 0,
+							$.isArray(movementRangeXs) ? movementRangeXs.length : 0, $.isArray(movementRangeYs) ? movementRangeYs.length : 0,
+							$.isArray(inputEvents) ? inputEvents.length : 0),
 			i, anim;
 
 		for (i = 0; i < maxLen; ++i) {
