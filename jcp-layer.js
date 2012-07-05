@@ -3,61 +3,69 @@
  *
  * Create a new jcparallax layer within the given viewport with the target element.
  *
- * @requires jcparallax.js
- * @requires jcp-viewport.js
- *
  * @param {Viewport} viewport jcparallax.Viewport object responsible for animating this layer
  * @param {jQuery}   el       target layer element for animation
  * @param {object}   options  options for this layer. Same as the Viewport options - @see jcp-viewport.js
+ *
+ * @requires jcparallax.js
+ * @requires jcp-animator.js
+ * @requires jcp-viewport.js
+ * @author Sam Pospischil <pospi@spadgos.com>
  */
 (function($) {
 
 jcparallax.Layer = function(viewport, el, options)
 {
+	var that = this;
+
 	// setup instance options
 	this.viewport = viewport;
 	this.element = el;
-	this.options = jcparallax.Viewport._inferMovementRanges(options);
+	this.options = options;
 
-	// store animation event handler to be called by our Viewport
-	if ($.isFunction(this.options.animHandler)) {
-		this.animHandler = this.options.animHandler;
+	// check for arrays of animation controllers for this layer
+	if ($.isArray(options.animHandler)
+	 || $.isArray(options.inputHandler)
+	 ||	$.isArray(options.movementRangeX)
+	 || $.isArray(options.movementRangeY)
+	 || $.isArray(options.inputEvent)) {
+		this._createAnimators(options.animHandler, options.inputHandler, options.movementRangeX, options.movementRangeY, options.inputEvent);
 	} else {
-		this.animHandler = jcparallax.Layer.animHandlers[this.options.animHandler];
+		// create a single animator
+		this.animators = [ new jcparallax.Animator(this, options) ];
 	}
-
-	// compute movement range
-	this._updateMovementRange(this.options.movementRangeX, this.options.movementRangeY);
 };
 
 $.extend(jcparallax.Layer.prototype, {
-
-	// cached layer coordinates for speeding up animation
-	minX : null,
-	minY : null,
-	rangeX : null,
-	rangeY : null,
 
 	// previous CSS attributes of the layer
 	prevFrameCss : {},
 
 	/**
 	 * Refreshes the cached coordinates of the layer after some external DOM manipulation
+	 * to synchronise new animation positioning
 	 */
 	refreshCoords : function()
 	{
-		if (!$.isArray(this.options.movementRangeX) || !$.isArray(this.options.movementRangeY)) {
-			this._updateMovementRange(this.options.movementRangeX, this.options.movementRangeY);
-		}
+		$.each(this.animators, function(i, anim) {
+			anim.refreshCoords();
+		});
 	},
 
 	/**
-	 * Redraw the layer, given new input values
+	 * Redraw the layer, using current input values for all our animators to generate
+	 * a merged CSS object to apply on our element.
 	 * @return true if the layer needed re-rendering
 	 */
-	redraw : function(xVal, yVal)
+	redraw : function()
 	{
-		var newCss = this.animHandler.call(this, xVal, yVal);
+		var newCss = {},
+			i = 0,
+			l = this.animators.length;
+
+		for (; i < l; ++i) {
+			$.extend(newCss, this.animators[i].makeCss());
+		}
 
 		if (this._cssChanged(newCss)) {
 			this.prevFrameCss = newCss;
@@ -68,34 +76,24 @@ $.extend(jcparallax.Layer.prototype, {
 		return false;
 	},
 
-	_updateMovementRange : function(xRangeOrCb, yRangeOrCb)
+	_createAnimators : function(animHandlers, inputHandlers, movementRangeXs, movementRangeYs, inputEvents)
 	{
-		var xRange, yRange;
+		this.animators = [];
 
-		if ($.isArray(xRangeOrCb)) {
-			xRange = xRangeOrCb;
-		} else {
-			xRange = this._calculateMovementRange(xRangeOrCb);
+		// coerce everything to equal length arrays
+		var maxLen = Math.max(animHandlers.length, inputHandlers.length, movementRangeXs.length, movementRangeYs.length, inputEvents.length),
+			i, anim;
+
+		for (i = 0; i < maxLen; ++i) {
+			anim = new jcparallax.Animator(this, {
+				animHandler : $.isArray(animHandlers) ? animHandlers[i] : animHandlers,
+				inputEvent : $.isArray(inputEvents) ? inputEvents[i] : inputEvents,
+				inputHandler : $.isArray(inputHandlers) ? inputHandlers[i] : inputHandlers,
+				movementRangeX : $.isArray(movementRangeXs) ? movementRangeXs[i] : movementRangeXs,
+				movementRangeY : $.isArray(movementRangeYs) ? movementRangeYs[i] : movementRangeYs
+			});
+			this.animators.push(anim);
 		}
-		if ($.isArray(yRangeOrCb)) {
-			yRange = yRangeOrCb;
-		} else {
-			yRange = this._calculateMovementRange(yRangeOrCb);
-		}
-
-		this.minX = parseFloat(xRange[0]);
-		this.rangeX = parseFloat(xRange[1] - xRange[0]);
-		this.minY = parseFloat(yRange[0]);
-		this.rangeY = parseFloat(yRange[1] - yRange[0]);
-	},
-
-	_calculateMovementRange : function(rangeCallback)
-	{
-		if (!$.isFunction(rangeCallback)) {
-			rangeCallback = jcparallax.Layer.rangeCalculators[rangeCallback];
-		}
-
-		return rangeCallback.call(this, this.element, this.viewport);
 	},
 
 	_cssChanged : function(newCss)
@@ -108,53 +106,6 @@ $.extend(jcparallax.Layer.prototype, {
 		return false;
 	}
 });
-
-//------------------------------------------------------------------------------
-// Layer animation handlers
-//------------------------------------------------------------------------------
-
-jcparallax.Layer.animHandlers = {
-
-	position : function(xVal, yVal)
-	{
-		return {
-			left : this.minX + (xVal * this.rangeX),
-			top : this.minY + (yVal * this.rangeY),
-		};
-	},
-
-	padding : function(xVal, yVal)
-	{
-
-	},
-
-	margins : function(xVal, yVal)
-	{
-
-	},
-
-	background : function(xVal, yVal)
-	{
-		return {
-			'background-position' : (this.minX + (xVal * this.rangeX)) + 'px ' + (this.minY + (yVal * this.rangeY)) + 'px',
-		};
-	},
-
-	stretch : function(xVal, yVal)
-	{
-
-	},
-
-	textShadow : function(xVal, yVal)
-	{
-
-	},
-
-	opacity : function(xVal, yVal)
-	{
-
-	}
-};
 
 //------------------------------------------------------------------------------
 // Automatic layer movement range calculation callbacks
