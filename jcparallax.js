@@ -152,6 +152,8 @@ $.extend(jcparallax, {
 		var ok = false,		// transitions supported at all
 			bgOk = true,	// background-position transition supported (not in opera as of 22/6/12 @see http://www.quirksmode.org/css/transitions.html)
 			tsOk = true,	// text-shadow transition supported (not in opera)
+			trOk = false,	// CSS 2d transforms support	:TODO: 3d transforms, though probably not necessary if combining outputs to achieve a result, could be added..
+			toOk = false,	// transform-origin CSS support for transforms
 
 			eventNames = {	// mapping of js DOM prefixes to the transition event needed by TransitionInterval to signify the end of a transition
 				MozTransition:    'transitionend',
@@ -160,26 +162,42 @@ $.extend(jcparallax, {
 				msTransition:     'MSTransitionEnd'
 			},
 
-			returnSupport = function(ok, bgOk, tsOk) {
+			returnSupport = function(_ok, _bgOk, _tsOk, _trOk, _toOk) {
 				return {
-					transitions : !!ok,
-					backgroundTransitions : bgOk || false,
-					textShadowTransitions : tsOk || false,
-					transitionEndEvent : ok ? eventNames[ok] + jcparallax.eventNamespace : null
+					transitions : !!_ok,
+					backgroundTransitions : _bgOk || false,
+					textShadowTransitions : _tsOk || false,
+					transforms : _trOk || false,
+					transformOrigin : _toOk || false,
+					transitionEndEvent : _ok ? eventNames[_ok] + jcparallax.eventNamespace : null
 				};
 			};
 
 		if ($.browser.msie) {
-			return returnSupport(false, false, false);
+			return returnSupport(false);
 		} else {
 			// check browser transition support via style DOM object. Credits to Modernizr here for the method.
 			var props = ('Transition ' + jcparallax.jsDomPrefixes.join('Transition ') + 'Transition').split(' '),
+				originProps = ('TransformOrigin ' + jcparallax.jsDomPrefixes.join('TransformOrigin ') + 'TransformOrigin').split(' '),
+				transformProps = ('Transform ' + jcparallax.jsDomPrefixes.join('Transform ') + 'Transform').split(' '),
 				testEl = document.createElement('jcparallax'),
     			styleObj = testEl.style;
 
 			for (var i in props) {
 				if (styleObj[ props[i] ] !== undefined) {
 					ok = props[i];
+					break;
+				}
+			}
+			for (var i in transformProps) {
+				if (styleObj[ transformProps[i] ] !== undefined) {
+					trOk = transformProps[i];
+					break;
+				}
+			}
+			for (var i in originProps) {
+				if (styleObj[ originProps[i] ] !== undefined) {
+					toOk = originProps[i];
 					break;
 				}
 			}
@@ -191,7 +209,7 @@ $.extend(jcparallax, {
 			}
 		}
 
-		return returnSupport(ok, bgOk, tsOk);
+		return returnSupport(ok, bgOk, tsOk, trOk, toOk);
 	}
 });
 jcparallax.support = jcparallax.detectSupport();

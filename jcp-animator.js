@@ -167,7 +167,7 @@ $.extend(jcparallax.Animator.prototype, {
 	 * using our last sampled input values or the ones provided.
 	 * Input values should be 0 < x < 1.
 	 *
-	 * @return {object} CSS properties to set on the layer element
+	 * @return {object} CSS properties to pass to jQuery .css()
 	 */
 	makeCss : function(xVal, yVal)
 	{
@@ -226,6 +226,20 @@ jcparallax.Animator.animHandlers = {
 	},
 
 	// CSS3 attributes
+
+	Xrotate : function(xVal, yVal)	// rotate based on X input
+	{
+		var css = {};
+		css[jcparallax.support.transforms] = 'rotate(' + (this.minX + (xVal * this.rangeX)) + 'deg)';
+		return css;
+	},
+
+	Yrotate : function(xVal, yVal)	// rotate based on Y input
+	{
+		var css = {};
+		css[jcparallax.support.transforms] = 'rotate(' + (this.minY + (yVal * this.rangeY)) + 'deg)';
+		return css;
+	},
 
 	textShadow : function(xVal, yVal)
 	{
