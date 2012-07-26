@@ -11,6 +11,8 @@
  * @requires jcp-layer.js
  * @author Sam Pospischil <pospi@spadgos.com>
  */
+(function($) {
+
 jcparallax.Animator = function(layer, options)
 {
 	var defaults = {
@@ -251,3 +253,5 @@ jcparallax.Animator.animHandlers = {
 
 	}
 };
+
+})(jQuery);
