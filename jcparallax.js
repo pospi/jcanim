@@ -113,13 +113,6 @@
  * 			in response to a parallax effect. This could be useful for fading out layers as they cross
  * 			or other such effects. Only responds to one axis of motion.
  *
- * TODO
- * ----
- * - detect mouse exiting viewport & update last position
- * - allow toggling the behaviour
- * - dont add transition duration properties if we dont need it
- * - input handler for click
- *
  * @requires	jquery 1.7.1	http://jquery.com
  * @requires	js-parallax.css
  *
