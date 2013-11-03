@@ -166,7 +166,10 @@ $.extend(jcparallax, {
 				};
 			};
 
-		if ($.browser.msie) {
+		var isMSIE = /*@cc_on!@*/false,
+			isOpera = window.opera || false;
+
+		if (isMSIE) {
 			return returnSupport(false);
 		} else {
 			// check browser transition support via style DOM object. Credits to Modernizr here for the method.
@@ -196,7 +199,7 @@ $.extend(jcparallax, {
 			}
 
 			// flag background and text-shadow to use fallback mode in opera
-			if ($.browser.opera) {
+			if (isOpera) {
 				bgOk = false;
 				tsOk = false;
 			}
