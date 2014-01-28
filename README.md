@@ -1,16 +1,16 @@
-## JCParallax ##
+## JCAnim ##
 
-> A **J**Query & **C**SS3 **Parallax** engine
+> A **J**Query & **C**SS3 **Anim**ation engine
 
 ### About ###
 
-This is a flexible parallax animation effect, written on top of an animation engine which uses CSS3 transitions to smooth out JavaScript interpolation of animation in the browser. The library basically creates smoother browser animations by allowing you to decrease the JavaScript sampling rate, offloading animation processing to the GPU and freeing up CPU resources to decrease animation stutter. Inbetween animations generally run at whatever native framerate your monitor supports and appear extremely smooth, obviously however this depends on browser support.
+Originally created to drive a parallax effect, the real gem in JCAnim turned out to be the extensible animation engine underpinning it - creating unbelievably fluid animations by using CSS3 transitions to smooth out JavaScript interpolation of animation in the browser. The library basically creates smoother browser animations by allowing you to decrease the JavaScript sampling rate, offloading animation processing to the GPU and freeing up CPU resources to decrease animation stutter. Inbetween animations generally run at whatever native framerate your monitor supports and appear extremely smooth, obviously however this depends on browser support.
 
 This kind of implementation is particularly suited to regularly sampled animation or keyframed animation. The parallax animation implemented by `jcparallax.Viewport` and `jcparallax.Layer` updates the mouse position constantly in response to input events, and then runs animations on those coordinates at regular intervals to achieve the effect.
 
 #### Animation Engine ####
 
-I have done my best to make JCParallax's animation system as flexible as possible, and it allows for nearly limitless combinations of effects. Combining scrolling parallax with mouse movement parallax, stretching and moving elements together or rotating to follow a point - all are possible. JCParallax basically provides its interface through `Viewports` (elements which receive input to control an animation) and `Layers` (elements being moved to achieve the effect).
+I have done my best to make JCAnim's animation system as flexible as possible, and it allows for nearly limitless combinations of effects. Combining scrolling parallax with mouse movement parallax, stretching and moving elements together or rotating to follow a point - all are possible. JCAnim basically provides its interface through `Viewports` (elements which receive input to control an animation) and `Layers` (elements being moved to achieve the effect).
 
 - Each viewport has multiple layers under its control
 - Layers can be connected to multiple viewports
